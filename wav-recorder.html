@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Хоолой Бичигч</title>
+<style>
+:root{color-scheme:dark;--bg:#0d0e10;--card:#17191d;--text:#f4f5f6;--muted:#9da3ad;--line:#292d33;--red:#ff3b4f}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:var(--text)}
+#app{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 18px;background:var(--bg)}
+.card{width:min(430px,100%);text-align:center}.mic{width:82px;height:82px;margin:0 auto 22px;border-radius:50%;background:var(--card);border:1px solid var(--line);display:grid;place-items:center;font-size:35px}.mic.live{box-shadow:0 0 0 8px #ff3b4f18}.title{font-size:28px;font-weight:750;margin-bottom:7px}.status{color:var(--muted);font-size:15px;min-height:23px}.timer{font-variant-numeric:tabular-nums;font-size:46px;font-weight:650;letter-spacing:1px;margin:24px 0 30px}.buttons{display:flex;gap:12px;justify-content:center}.btn{border:0;border-radius:15px;min-height:58px;padding:0 25px;font-size:17px;font-weight:700;cursor:pointer;background:#24282e;color:var(--text);touch-action:manipulation}.btn:disabled{opacity:.38}.record{background:var(--red);min-width:170px}.recording .record{background:#e8e9eb;color:#151619}.hint{margin-top:25px;color:#747b85;font-size:13px;line-height:1.45}.quality{margin-top:16px;color:#b7bcc4;font-size:12px}
+</style>
+</head>
+<body><main id="app"><section class="card">
+<div id="mic" class="mic">🎙️</div><div class="title">Хоолой Бичигч</div><div id="status" class="status">бичихэд бэлэн</div><div id="timer" class="timer">00:00</div>
+<div class="buttons"><button id="record" class="btn record">Бичиж эхлэх</button><button id="stop" class="btn" disabled>Зогсоох &amp; хадгалах </button></div>
+<div class="quality">Uncompressed PCM WAV · 48 kHz · 16-bit · mono</div><div class="hint">Зогсоох үед таны төхөөрөмжид хадгалагдах болно.</div>
+</section></main>
+<script>
+let audioCtx, source, processor, input, chunks=[], recording=false, startedAt=0, timerId;
+const $=id=>document.getElementById(id);
+function fmt(sec){sec=Math.floor(sec);return String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0')}
+function updateTimer(){$('timer').textContent=fmt((performance.now()-startedAt)/1000)}
+function mergeBuffers(list){let len=list.reduce((n,a)=>n+a.length,0),out=new Float32Array(len),p=0;for(const a of list){out.set(a,p);p+=a.length}return out}
+function wavBlob(samples,sampleRate){const buffer=new ArrayBuffer(44+samples.length*2),view=new DataView(buffer);let p=0;
+const str=s=>{for(let i=0;i<s.length;i++)view.setUint8(p++,s.charCodeAt(i))};const u32=v=>{view.setUint32(p,v,true);p+=4};const u16=v=>{view.setUint16(p,v,true);p+=2};
+str('RIFF');u32(36+samples.length*2);str('WAVE');str('fmt ');u32(16);u16(1);u16(1);u32(sampleRate);u32(sampleRate*2);u16(2);u16(16);str('data');u32(samples.length*2);
+for(let i=0;i<samples.length;i++){let x=Math.max(-1,Math.min(1,samples[i]));view.setInt16(p,x<0?x*0x8000:x*0x7fff,true);p+=2}return new Blob([view],{type:'audio/wav'})}
+async function start(){if(recording)return;try{const stream=await navigator.mediaDevices.getUserMedia({audio:{channelCount:1,echoCancellation:false,noiseSuppression:false,autoGainControl:false}});audioCtx=new (window.AudioContext||window.webkitAudioContext)({sampleRate:48000});await audioCtx.resume();source=audioCtx.createMediaStreamSource(stream);processor=audioCtx.createScriptProcessor(4096,1,1);chunks=[];processor.onaudioprocess=e=>{if(recording)chunks.push(new Float32Array(e.inputBuffer.getChannelData(0)))};source.connect(processor);processor.connect(audioCtx.destination);recording=true;startedAt=performance.now();timerId=setInterval(updateTimer,250);$('record').textContent='Бичиж байна...';$('stop').disabled=false;$('mic').classList.add('live');$('app').classList.add('recording');$('status').textContent='Микрофон';}
+catch(e){$('status').textContent='Microphone permission was denied or unavailable.';console.error(e)}}
+async function stop(){if(!recording)return;recording=false;clearInterval(timerId);updateTimer();processor.disconnect();source.mediaStream.getTracks().forEach(t=>t.stop());const samples=mergeBuffers(chunks);const blob=wavBlob(samples,audioCtx.sampleRate);audioCtx.close();const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='recording-'+new Date().toISOString().replace(/[:.]/g,'-')+'.wav';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);$('record').textContent='Start recording';$('stop').disabled=true;$('mic').classList.remove('live');$('app').classList.remove('recording');$('status').textContent='Saved WAV to your device';chunks=[]}
+$('record').onclick=start;$('stop').onclick=stop;
+</script></body></html>
