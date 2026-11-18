@@ -1,33 +1,260 @@
 <!doctype html>
-<html lang="en">
+<html lang="mn">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Хоолой Бичигч</title>
 <style>
-:root{color-scheme:dark;--bg:#0d0e10;--card:#17191d;--text:#f4f5f6;--muted:#9da3ad;--line:#292d33;--red:#ff3b4f}
-*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:var(--text)}
-#app{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 18px;background:var(--bg)}
-.card{width:min(430px,100%);text-align:center}.mic{width:82px;height:82px;margin:0 auto 22px;border-radius:50%;background:var(--card);border:1px solid var(--line);display:grid;place-items:center;font-size:35px}.mic.live{box-shadow:0 0 0 8px #ff3b4f18}.title{font-size:28px;font-weight:750;margin-bottom:7px}.status{color:var(--muted);font-size:15px;min-height:23px}.timer{font-variant-numeric:tabular-nums;font-size:46px;font-weight:650;letter-spacing:1px;margin:24px 0 30px}.buttons{display:flex;gap:12px;justify-content:center}.btn{border:0;border-radius:15px;min-height:58px;padding:0 25px;font-size:17px;font-weight:700;cursor:pointer;background:#24282e;color:var(--text);touch-action:manipulation}.btn:disabled{opacity:.38}.record{background:var(--red);min-width:170px}.recording .record{background:#e8e9eb;color:#151619}.hint{margin-top:25px;color:#747b85;font-size:13px;line-height:1.45}.quality{margin-top:16px;color:#b7bcc4;font-size:12px}
+:root{color-scheme:dark;--bg:#0d0e10;--card:#17191d;--panel:#111316;--text:#f4f5f6;--muted:#9da3ad;--line:#292d33;--red:#ff3b4f}
+*{box-sizing:border-box}[hidden]{display:none!important}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+#app{min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:max(20px,env(safe-area-inset-top)) 16px max(20px,env(safe-area-inset-bottom))}
+.card{width:min(560px,100%);text-align:center}
+.mic{width:64px;height:64px;margin:0 auto 14px;border-radius:50%;background:var(--card);border:1px solid var(--line);display:grid;place-items:center;font-size:28px;transition:box-shadow .2s}
+.mic.live{box-shadow:0 0 0 8px #ff3b4f22;border-color:var(--red)}
+.title{font-size:26px;font-weight:750;margin-bottom:6px}
+.status{color:var(--muted);font-size:15px;min-height:22px}
+.timer{font-variant-numeric:tabular-nums;font-size:46px;font-weight:650;letter-spacing:1px;margin:14px 0 16px}
+.timer small{font-size:20px;font-weight:500;color:var(--muted);letter-spacing:0}
+.track{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:8px 8px 10px;touch-action:none}
+canvas{display:block;width:100%;height:150px;border-radius:10px;background:#0a0b0d}
+.meter{display:flex;align-items:center;gap:10px;margin-top:10px;padding:0 4px;font-size:12px;color:var(--muted)}
+.bar{position:relative;flex:1;height:6px;border-radius:3px;overflow:hidden;background:linear-gradient(90deg,#2fd27a 0,#2fd27a 70%,#ffd24a 88%,#ff3b4f 100%)}
+.bar .cover{position:absolute;top:0;bottom:0;right:0;width:100%;background:#1d2025}
+.bar .ceil{position:absolute;top:0;bottom:0;left:98.33%;width:2px;background:#f4f5f6}
+#db{min-width:96px;text-align:right;font-variant-numeric:tabular-nums}
+#lim{padding:2px 7px;border-radius:6px;border:1px solid var(--line);color:#5b616b;font-weight:700;font-size:11px;transition:all .12s}
+#lim.on{color:#fff;background:var(--red);border-color:var(--red)}
+.buttons{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+.btn{border:0;border-radius:15px;min-height:56px;padding:0 24px;font-size:17px;font-weight:700;cursor:pointer;background:#24282e;color:var(--text);touch-action:manipulation}
+.btn:disabled{opacity:.4;cursor:default}
+.btn:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.record{background:var(--red);min-width:190px}
+.stop{background:#e8e9eb;color:#151619;min-width:190px}
+.quality{margin-top:18px;color:#b7bcc4;font-size:12px}
+.hint{margin-top:6px;color:#747b85;font-size:13px;line-height:1.45}
 </style>
 </head>
 <body><main id="app"><section class="card">
-<div id="mic" class="mic">🎙️</div><div class="title">Хоолой Бичигч</div><div id="status" class="status">бичихэд бэлэн</div><div id="timer" class="timer">00:00</div>
-<div class="buttons"><button id="record" class="btn record">Бичиж эхлэх</button><button id="stop" class="btn" disabled>Зогсоох &amp; хадгалах </button></div>
-<div class="quality">Uncompressed PCM WAV · 48 kHz · 16-bit · mono</div><div class="hint">Зогсоох үед таны төхөөрөмжид хадгалагдах болно.</div>
+<div id="mic" class="mic">🎙️</div>
+<div class="title">Хоолой Бичигч</div>
+<div id="status" class="status"></div>
+<div id="timer" class="timer">00:00</div>
+<div class="track">
+  <canvas id="cv"></canvas>
+  <div class="meter"><div class="bar"><div id="cover" class="cover"></div><i class="ceil"></i></div><span id="db">оргил −∞ dB</span><span id="lim">LIM</span></div>
+</div>
+<div class="buttons">
+  <button id="bRec" class="btn record">● Бичиж эхлэх</button>
+  <button id="bStop" class="btn stop" hidden>■ Зогсоох</button>
+  <button id="bPlay" class="btn" hidden>▶ Тоглуулах</button>
+  <button id="bSave" class="btn record" hidden>Хадгалах (WAV)</button>
+  <button id="bNew" class="btn" hidden>Шинэ бичлэг</button>
+</div>
+<div id="q" class="quality"></div>
+<div class="hint">Оргил түвшин −1 dBFS-ээс хэтрэхгүй. Бичлэгийг зогсоосны дараа сонсоод, хадгална.</div>
 </section></main>
 <script>
-let audioCtx, source, processor, input, chunks=[], recording=false, startedAt=0, timerId;
-const $=id=>document.getElementById(id);
-function fmt(sec){sec=Math.floor(sec);return String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0')}
-function updateTimer(){$('timer').textContent=fmt((performance.now()-startedAt)/1000)}
-function mergeBuffers(list){let len=list.reduce((n,a)=>n+a.length,0),out=new Float32Array(len),p=0;for(const a of list){out.set(a,p);p+=a.length}return out}
-function wavBlob(samples,sampleRate){const buffer=new ArrayBuffer(44+samples.length*2),view=new DataView(buffer);let p=0;
-const str=s=>{for(let i=0;i<s.length;i++)view.setUint8(p++,s.charCodeAt(i))};const u32=v=>{view.setUint32(p,v,true);p+=4};const u16=v=>{view.setUint16(p,v,true);p+=2};
-str('RIFF');u32(36+samples.length*2);str('WAVE');str('fmt ');u32(16);u16(1);u16(1);u32(sampleRate);u32(sampleRate*2);u16(2);u16(16);str('data');u32(samples.length*2);
-for(let i=0;i<samples.length;i++){let x=Math.max(-1,Math.min(1,samples[i]));view.setInt16(p,x<0?x*0x8000:x*0x7fff,true);p+=2}return new Blob([view],{type:'audio/wav'})}
-async function start(){if(recording)return;try{const stream=await navigator.mediaDevices.getUserMedia({audio:{channelCount:1,echoCancellation:false,noiseSuppression:false,autoGainControl:false}});audioCtx=new (window.AudioContext||window.webkitAudioContext)({sampleRate:48000});await audioCtx.resume();source=audioCtx.createMediaStreamSource(stream);processor=audioCtx.createScriptProcessor(4096,1,1);chunks=[];processor.onaudioprocess=e=>{if(recording)chunks.push(new Float32Array(e.inputBuffer.getChannelData(0)))};source.connect(processor);processor.connect(audioCtx.destination);recording=true;startedAt=performance.now();timerId=setInterval(updateTimer,250);$('record').textContent='Бичиж байна...';$('stop').disabled=false;$('mic').classList.add('live');$('app').classList.add('recording');$('status').textContent='Микрофон';}
-catch(e){$('status').textContent='Microphone permission was denied or unavailable.';console.error(e)}}
-async function stop(){if(!recording)return;recording=false;clearInterval(timerId);updateTimer();processor.disconnect();source.mediaStream.getTracks().forEach(t=>t.stop());const samples=mergeBuffers(chunks);const blob=wavBlob(samples,audioCtx.sampleRate);audioCtx.close();const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='recording-'+new Date().toISOString().replace(/[:.]/g,'-')+'.wav';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);$('record').textContent='Start recording';$('stop').disabled=true;$('mic').classList.remove('live');$('app').classList.remove('recording');$('status').textContent='Saved WAV to your device';chunks=[]}
-$('record').onclick=start;$('stop').onclick=stop;
+const CEIL=Math.pow(10,-1/20), BIN=256, WIN=10, AC=window.AudioContext||window.webkitAudioContext;
+
+/* ---- Lookahead brick-wall limiter (5 ms), ceiling −1 dBFS. Runs in AudioWorklet, or on main thread as fallback. ---- */
+class Limiter{
+  constructor(sr,ceil){
+    const W=Math.max(2,Math.round(sr*.005));
+    this.W=W;this.D=W-1;this.ceil=ceil;this.n=0;this.g=1;this.cur=1;
+    this.a=new Float32Array(W);
+    this.r=new Float64Array(W).fill(1);this.sum=W;
+    this.cap=W+1;this.dv=new Float32Array(this.cap);this.di=new Float64Array(this.cap);this.h=0;this.c=0;
+    this.rel=1-Math.exp(-1/(sr*.12));
+  }
+  step(x){
+    const W=this.W,n=this.n,p=n%W,cap=this.cap,ab=x<0?-x:x;
+    while(this.c>0&&this.dv[(this.h+this.c-1)%cap]<=ab)this.c--;
+    const t=(this.h+this.c)%cap;this.dv[t]=ab;this.di[t]=n;this.c++;
+    while(this.di[this.h]<=n-W){this.h=(this.h+1)%cap;this.c--}
+    const m=this.dv[this.h],gm=m>this.ceil?this.ceil/m:1;
+    let r=this.cur+(1-this.cur)*this.rel;if(gm<r)r=gm;this.cur=r;
+    this.sum+=r-this.r[p];this.r[p]=r;
+    const g=this.sum/W;this.g=g;
+    this.a[p]=x;
+    const y=this.a[(p+1)%W]*g;this.n=n+1;
+    return y>this.ceil?this.ceil:y<-this.ceil?-this.ceil:y;
+  }
+}
+class Core{
+  constructor(sr,ceil,emit){this.l=new Limiter(sr,ceil);this.emit=emit;this.skip=this.l.D;this.reset()}
+  reset(){this.b=new Int16Array(2048);this.i=0;this.pk=0;this.gr=1}
+  put(y){const q=Math.round(y*32767),a=q<0?-q:q;this.b[this.i++]=q;if(a>this.pk)this.pk=a;if(this.l.g<this.gr)this.gr=this.l.g;if(this.i===2048)this.out(this.b)}
+  out(b){this.emit({pcm:b,pk:this.pk/32767,gr:this.gr});this.reset()}
+  feed(x){const y=this.l.step(x);if(this.skip>0){this.skip--;return}this.put(y)}
+  push(x){for(let i=0;i<x.length;i++)this.feed(x[i])}
+  flush(){for(let i=0;i<this.l.D;i++)this.feed(0);if(this.i)this.out(this.b.slice(0,this.i))}
+}
+const WORKLET=`${Limiter}\n${Core}\nclass Rec extends AudioWorkletProcessor{
+constructor(o){super();this.off=false;this.c=new Core(sampleRate,o.processorOptions.ceil,m=>this.port.postMessage(m,[m.pcm.buffer]));
+this.port.onmessage=()=>{this.c.flush();this.off=true;this.port.postMessage({done:true})}}
+process(i){const x=i[0]&&i[0][0];if(x&&!this.off)this.c.push(x);return true}}
+registerProcessor('rec',Rec);`;
+
+/* ---- State ---- */
+const $=id=>document.getElementById(id), cv=$('cv'), c=cv.getContext('2d');
+let state='idle',sr=48000,dpr=1,stream,actx,src,node,core,pctx,psrc,abuf;
+let chunks,total,pk,nb,bMin,bMax,bN,maxPk,lvl,limT,lastT,dur,pos,off,t0,playing,drag,dragPos,saved,wfDim,wfLit,raf=0;
+
+function reset(){chunks=[];total=0;pk=new Float32Array(8192);nb=0;bMin=32767;bMax=-32768;bN=0;maxPk=0;lvl=0;limT=0;lastT=0;dur=0;pos=0;playing=false;drag=false;saved=false;wfDim=wfLit=abuf=null}
+reset();
+
+const fmt=s=>{s=Math.floor(s);const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60,p=n=>String(n).padStart(2,'0');return(h?h+':':'')+p(m)+':'+p(x)};
+const dbStr=v=>v<=0?'−∞':(20*Math.log10(v)).toFixed(1).replace('-','−');
+
+function addBin(){
+  if(2*nb+2>pk.length){const n=new Float32Array(pk.length*2);n.set(pk);pk=n}
+  pk[2*nb]=bMin/32768;pk[2*nb+1]=bMax/32768;nb++;bMin=32767;bMax=-32768;bN=0;
+}
+function onChunk(m){
+  const p=m.pcm;chunks.push(p);total+=p.length;lastT=performance.now();
+  for(let i=0;i<p.length;i++){const v=p[i];if(v<bMin)bMin=v;if(v>bMax)bMax=v;if(++bN===BIN)addBin()}
+  if(m.pk>lvl)lvl=m.pk;if(m.pk>maxPk)maxPk=m.pk;if(m.gr<.988)limT=performance.now();
+}
+
+/* ---- Waveform track ---- */
+function plot(x,col,s0,s1){
+  const w=x.canvas.width,h=x.canvas.height,mid=h/2,amp=mid-3*dpr,span=(s1-s0)/w;x.fillStyle=col;
+  for(let i=0;i<w;i++){
+    const a=s0+i*span,b=a+span;if(b<=0||a>=total)continue;
+    const b0=Math.max(0,Math.floor(a/BIN)),b1=Math.min(nb-1,Math.max(b0,Math.ceil(b/BIN)-1));let mn=1,mx=-1;
+    for(let k=b0;k<=b1;k++){if(pk[2*k]<mn)mn=pk[2*k];if(pk[2*k+1]>mx)mx=pk[2*k+1]}
+    if(mx<mn)continue;const y0=mid-mx*amp,y1=mid-mn*amp;x.fillRect(i,y0,1,Math.max(dpr,y1-y0));
+  }
+}
+function mk(col){const o=document.createElement('canvas');o.width=cv.width;o.height=cv.height;plot(o.getContext('2d'),col,0,total);return o}
+function curPos(){return drag?dragPos:playing?Math.min(dur,off+pctx.currentTime-t0):pos}
+function draw(){
+  const w=cv.width,h=cv.height,mid=h/2,cy=(mid-3*dpr)*CEIL;
+  c.clearRect(0,0,w,h);
+  c.fillStyle='#23272d';c.fillRect(0,mid,w,Math.max(1,dpr));
+  c.strokeStyle='rgba(255,59,79,.5)';c.lineWidth=dpr;c.setLineDash([4*dpr,4*dpr]);
+  c.beginPath();c.moveTo(0,mid-cy);c.lineTo(w,mid-cy);c.moveTo(0,mid+cy);c.lineTo(w,mid+cy);c.stroke();c.setLineDash([]);
+  c.fillStyle='rgba(255,110,124,.85)';c.font=`${10*dpr}px system-ui,sans-serif`;c.fillText('−1 dB',6*dpr,mid-cy+12*dpr);
+  if(state==='rec'||state==='stopping'){
+    const t1=total+Math.min((performance.now()-lastT)*sr/1000,2048);plot(c,'#ff3b4f',t1-WIN*sr,t1);
+  }else if(state==='review'){
+    if(!wfDim){wfDim=mk('#6f7885');wfLit=mk('#f4f5f6')}
+    c.drawImage(wfDim,0,0);
+    const px=Math.round(curPos()/dur*w);
+    if(px>0)c.drawImage(wfLit,0,0,px,h,0,0,px,h);
+    c.fillStyle='#ff3b4f';c.fillRect(px-dpr,0,2*dpr,h);
+  }
+}
+function meter(){
+  lvl*=.92;const show=state==='review'?0:lvl,d=show>0?20*Math.log10(show):-60,p=Math.max(0,Math.min(1,(d+60)/60));
+  $('cover').style.width=(100-p*100)+'%';
+  $('db').textContent='оргил '+dbStr(maxPk)+' dB';
+  $('lim').classList.toggle('on',performance.now()-limT<350);
+}
+let lastTxt='';
+function timer(){
+  const r=state==='review',t=fmt(r?curPos():total/sr)+(r?` <small>/ ${fmt(dur)}</small>`:'');
+  if(t!==lastTxt){$('timer').innerHTML=t;lastTxt=t}
+}
+function tick(){raf=0;draw();meter();timer();if(state==='rec'||state==='stopping'||playing||drag)raf=requestAnimationFrame(tick)}
+function kick(){if(!raf)raf=requestAnimationFrame(tick)}
+new ResizeObserver(()=>{dpr=window.devicePixelRatio||1;cv.width=Math.max(1,Math.round(cv.clientWidth*dpr));cv.height=Math.round(150*dpr);wfDim=wfLit=null;kick()}).observe(cv);
+
+/* ---- UI ---- */
+function ui(){
+  const s=state;
+  $('bRec').hidden=s!=='idle';$('bStop').hidden=!(s==='rec'||s==='stopping');$('bStop').disabled=s==='stopping';
+  for(const id of['bPlay','bSave','bNew'])$(id).hidden=s!=='review';
+  $('bPlay').textContent=playing?'❚❚ Түр зогсоох':'▶ Тоглуулах';
+  $('mic').classList.toggle('live',s==='rec');
+  cv.style.cursor=s==='review'?'pointer':'default';
+  $('status').textContent=s==='idle'?'бичихэд бэлэн':s==='rec'?'Бичиж байна…':s==='stopping'?'Дуусгаж байна…':saved?'WAV файл төхөөрөмжид хадгалагдлаа':'Бичлэг бэлэн · дуу долгион дээр дарж байрлалаа сонгоно уу';
+  $('q').textContent=`Шахалтгүй PCM WAV · ${sr/1000} kHz · 16-bit · mono · оргил ≤ −1 dBFS`;
+}
+
+/* ---- Recording ---- */
+async function start(){
+  if(state!=='idle')return;
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({audio:{channelCount:1,echoCancellation:false,noiseSuppression:false,autoGainControl:false}});
+    try{actx=new AC({sampleRate:48000})}catch(e){actx=new AC()}
+    await actx.resume();sr=actx.sampleRate;reset();core=null;node=null;
+    src=actx.createMediaStreamSource(stream);
+    const mute=actx.createGain();mute.gain.value=0;mute.connect(actx.destination);
+    if(actx.audioWorklet){
+      try{
+        const url=URL.createObjectURL(new Blob([WORKLET],{type:'text/javascript'}));
+        await actx.audioWorklet.addModule(url);URL.revokeObjectURL(url);
+        node=new AudioWorkletNode(actx,'rec',{channelCount:1,channelCountMode:'explicit',numberOfOutputs:1,outputChannelCount:[1],processorOptions:{ceil:CEIL}});
+        node.port.onmessage=e=>e.data.done?finish():onChunk(e.data);
+      }catch(e){node=null}
+    }
+    if(!node){
+      core=new Core(sr,CEIL,onChunk);
+      node=actx.createScriptProcessor(4096,1,1);
+      node.onaudioprocess=e=>core.push(e.inputBuffer.getChannelData(0));
+    }
+    src.connect(node);node.connect(mute);
+    state='rec';lastT=performance.now();ui();kick();
+  }catch(e){
+    console.error(e);
+    if(stream)stream.getTracks().forEach(t=>t.stop());
+    if(actx)actx.close();
+    state='idle';ui();$('status').textContent='Микрофон ашиглах зөвшөөрөл олгогдоогүй эсвэл микрофон олдсонгүй.';
+  }
+}
+function stop(){
+  if(state!=='rec')return;
+  state='stopping';ui();
+  src.disconnect();stream.getTracks().forEach(t=>t.stop());
+  if(core){core.flush();finish()}else node.port.postMessage('flush');
+}
+function finish(){
+  if(state!=='stopping')return;
+  try{node.disconnect()}catch(e){}
+  actx.close();if(bN)addBin();
+  if(total<1){reset();state='idle';ui();kick();return}
+  dur=total/sr;pos=0;state='review';ui();kick();
+}
+
+/* ---- Playback ---- */
+function buildBuf(){
+  pctx=pctx||new AC();abuf=pctx.createBuffer(1,total,sr);
+  const d=abuf.getChannelData(0);let o=0;
+  for(const ch of chunks){for(let i=0;i<ch.length;i++)d[o+i]=ch[i]/32768;o+=ch.length}
+}
+function stopSrc(){if(psrc){psrc.onended=null;try{psrc.stop()}catch(e){}psrc=null}}
+function play(from){
+  if(!abuf)buildBuf();
+  pctx.resume();stopSrc();if(from>=dur-.01)from=0;
+  const s=psrc=pctx.createBufferSource();s.buffer=abuf;s.connect(pctx.destination);
+  s.onended=()=>{if(psrc===s){psrc=null;playing=false;pos=0;ui();kick()}};
+  s.start(0,from);t0=pctx.currentTime;off=from;playing=true;ui();kick();
+}
+function pause(){pos=curPos();stopSrc();playing=false;ui();kick()}
+function seekTo(e){const r=cv.getBoundingClientRect();dragPos=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width))*dur;kick()}
+cv.onpointerdown=e=>{if(state!=='review')return;drag=true;cv.setPointerCapture(e.pointerId);seekTo(e)};
+cv.onpointermove=e=>{if(drag)seekTo(e)};
+cv.onpointerup=cv.onpointercancel=()=>{if(!drag)return;drag=false;if(playing)play(dragPos);else{pos=dragPos;kick()}};
+
+/* ---- Save ---- */
+function save(){
+  const n=total,hd=new DataView(new ArrayBuffer(44));let p=0;
+  const s=t=>{for(let i=0;i<t.length;i++)hd.setUint8(p++,t.charCodeAt(i))},u32=v=>{hd.setUint32(p,v,true);p+=4},u16=v=>{hd.setUint16(p,v,true);p+=2};
+  s('RIFF');u32(36+n*2);s('WAVE');s('fmt ');u32(16);u16(1);u16(1);u32(sr);u32(sr*2);u16(2);u16(16);s('data');u32(n*2);
+  const url=URL.createObjectURL(new Blob([hd,...chunks],{type:'audio/wav'})),a=document.createElement('a'),d=new Date(),z=v=>String(v).padStart(2,'0');
+  a.href=url;a.download=`recording-${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}-${z(d.getHours())}${z(d.getMinutes())}${z(d.getSeconds())}.wav`;
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);
+  saved=true;ui();
+}
+function fresh(){
+  if(!saved&&!confirm('Хадгалаагүй бичлэг устах болно. Үргэлжлүүлэх үү?'))return;
+  stopSrc();reset();state='idle';lastTxt='';ui();kick();
+}
+
+$('bRec').onclick=start;$('bStop').onclick=stop;$('bSave').onclick=save;$('bNew').onclick=fresh;
+$('bPlay').onclick=()=>playing?pause():play(pos);
+window.addEventListener('beforeunload',e=>{if(state==='rec'||state==='stopping'||(state==='review'&&!saved)){e.preventDefault();e.returnValue=''}});
+ui();
 </script></body></html>
